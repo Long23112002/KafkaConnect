@@ -1,0 +1,9 @@
+#Xoa 1 connector
+curl -X DELETE http://localhost:8083/connectors/postgres-source-connector  
+#Dang ki 1 connector
+ ./register-connector.sh sources/postgres-user-source.json
+#Lay danh sach connector
+curl -X GET http://localhost:8083/connectors
+#Lay thong tin connector
+
+
