@@ -1,5 +1,5 @@
 #Xoa 1 connector
-curl -X DELETE http://localhost:8083/connectors/postgres-source-connector  
+curl -X DELETE http://localhost:8083/connectors/debezium-postgres-source  
 #Dang ki 1 connector
  ./register-connector.sh sources/postgres-user-source.json
 #Lay danh sach connector

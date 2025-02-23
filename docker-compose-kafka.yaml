@@ -20,6 +20,17 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:9092"
+      SCHEMA_REGISTRY_HOST_NAME: "schema-registry"
+
   postgres:
     image: postgres:12
     container_name: postgres
@@ -36,6 +47,8 @@ services:
     image: confluentinc/cp-kafka-connect:latest
     container_name: kafka-connect
     depends_on:
+      - kafka
+      - schema-registry
       - postgres
       - mongodb
     ports:
@@ -47,10 +60,10 @@ services:
       CONNECT_CONFIG_STORAGE_TOPIC: "connect-configs"
       CONNECT_OFFSET_STORAGE_TOPIC: "connect-offsets"
       CONNECT_STATUS_STORAGE_TOPIC: "connect-status"
-      CONNECT_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_KEY_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
-      CONNECT_INTERNAL_VALUE_CONVERTER: "org.apache.kafka.connect.json.JsonConverter"
+      CONNECT_KEY_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_VALUE_CONVERTER: "io.confluent.connect.avro.AvroConverter"
+      CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
       CONNECT_REST_PORT: 8083
       CONNECT_PLUGIN_PATH: "/usr/share/confluent-hub-components"
     volumes:
@@ -63,6 +76,7 @@ services:
           confluent-hub install --no-prompt mongodb/kafka-connect-mongodb:latest
           confluent-hub install --no-prompt debezium/debezium-connector-postgresql:latest
           confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:latest
+          confluent-hub install --no-prompt confluentinc/kafka-connect-avro-converter:latest
           touch /usr/share/confluent-hub-components/.installed
         fi
         /etc/confluent/docker/run
@@ -80,5 +94,6 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: "local"
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: "http://schema-registry:8081"
     ports:
       - "9089:8080"
